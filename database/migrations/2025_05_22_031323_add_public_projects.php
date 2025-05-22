@@ -6,23 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+     public function up()
     {
         Schema::table('projects', function (Blueprint $table) {
-            $table->renameColumn('github_url', 'url_project');
+            $table->boolean('public')->default(false)->after('url_project');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::table('projects', function (Blueprint $table) {
-            $table->renameColumn('url_project', 'github_url');
+            $table->dropColumn('public');
         });
     }
 };

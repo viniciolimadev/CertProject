@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('certificates', function (Blueprint $table) {
-    $table->id();
-    $table->string('title');
-    $table->text('description_certificate'); 
-    $table->string('file_path'); // Path do PDF
-    $table->timestamps();
-});
-
+        Schema::create('certificates', function (Blueprint $table) {
+            $table->id();
+            $table->string('title');
+            $table->string('file');
+            $table->text('description_certificate')->nullable();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->timestamps();
+        });
     }
 
     /**

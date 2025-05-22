@@ -21,25 +21,39 @@
 
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-        <div class="container">
-            <a class="nav-link" href="{{ route('projects.index') }}">Projetos</a>
+    <div class="container">
+        <a class="navbar-brand" href="{{ route('home') }}">CertProject</a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-            <div class="collapse navbar-collapse" id="navbarContent">
-                <ul class="navbar-nav ms-auto">
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('certificates.*') ? 'active' : '' }}" href="{{ route('certificates.index') }}">Certificados</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('projects.*') ? 'active' : '' }}" href="{{ route('projects.index') }}">Projetos</a>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav ms-auto">
+                @auth
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('certificates.*') ? 'active' : '' }}" href="{{ route('certificates.index') }}">Certificados</a>
+                        <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                            @csrf
+                            <button class="btn btn-outline-light btn-sm" type="submit">Logout ({{ auth()->user()->name }})</button>
+                        </form>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('projects.*') ? 'active' : '' }}" href="{{ route('projects.index') }}">Projetos</a>
-                    </li>
-                </ul>
-            </div>
+                @endauth
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
     <!-- Conteúdo principal -->
     <div class="container">

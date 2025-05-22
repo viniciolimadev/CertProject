@@ -4,18 +4,42 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Certificate;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-
 
 class CertificateController extends Controller
 {
-
     public function index()
     {
-        $certificates = Certificate::all();
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login')->withErrors('Você precisa estar logado para ver seus certificados.');
+        }
+
+
+        $certificates = Certificate::where('user_id', Auth::id())
+            ->latest()
+            ->get();
 
         return view('certificates.index', compact('certificates'));
     }
+
+    public function viewPdf(Certificate $certificate)
+    {
+        if ($certificate->user_id !== Auth::id()) {
+            abort(403, 'Você não tem permissão para acessar este certificado.');
+        }
+
+        $path = storage_path("app/public/{$certificate->file_path}");
+
+        if (!file_exists($path)) {
+            abort(404, 'Arquivo não encontrado.');
+        }
+
+        return response()->file($path);
+    }
+
     public function create()
     {
         return view('certificates.create');
@@ -25,29 +49,81 @@ class CertificateController extends Controller
     {
         $request->validate([
             'title' => 'required|string',
-            'file' => 'required|mimes:pdf|max:2048',
+            'file_path' => 'required|mimes:pdf|max:2048',
             'description_certificate' => 'nullable|string'
         ]);
 
-        $path = $request->file('file')->store('certificates', 'public');
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login')->withErrors('Você precisa estar logado para enviar um certificado.');
+        }
 
-        $certificate = Certificate::create([
+        $path = $request->file('file_path')->store('certificates', 'public');
+
+        Certificate::create([
             'title' => $request->title,
             'file_path' => $path,
-            'description_certificate' => $request->description_certificate
+            'description_certificate' => $request->description_certificate,
+            'user_id' => $user->id,
+            'pinned' => false, // Padrão: não fixado ao criar
         ]);
 
         return redirect()->route('certificates.index')->with('success', 'Certificado salvo com sucesso!');
-
     }
 
     public function show(Certificate $certificate)
     {
-        return $certificate;
+        if ($certificate->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        return view('certificates.show', compact('certificate'));
     }
 
     public function download(Certificate $certificate)
     {
+        if ($certificate->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         return response()->download(storage_path("app/public/{$certificate->file_path}"));
     }
+
+    // Método para fixar/desfixar certificados
+    // public function togglePin(Certificate $certificate)
+    // {
+    //     $user = Auth::user();
+
+    //     if ($certificate->user_id !== $user->id) {
+    //         abort(403);
+    //     }
+
+    //     $certificate->pinned = !$certificate->pinned;
+    //     $certificate->save();
+
+    //     return redirect()->back()->with('success', 'Status de fixação do certificado atualizado!');
+    // }
+    // App\Http\Controllers\CertificateController.php
+
+    // public function pin(Certificate $certificate)
+    // {
+    //     if ($certificate->user_id !== Auth::id()) {
+    //         abort(403);
+    //     }
+
+    //     $certificate->update(['pinned' => true]);
+
+    //     return redirect()->route('certificates.index')->with('success', 'Certificado fixado com sucesso!');
+    // }
+
+    // public function unpin(Certificate $certificate)
+    // {
+    //     if ($certificate->user_id !== Auth::id()) {
+    //         abort(403);
+    //     }
+
+    //     $certificate->update(['pinned' => false]);
+
+    //     return redirect()->route('certificates.index')->with('success', 'Certificado desfixado com sucesso!');
+    // }
 }

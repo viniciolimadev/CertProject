@@ -9,22 +9,19 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
-{
-    Schema::table('certificates', function (Blueprint $table) {
-        
-        $table->text('description_certificate');
-
-    });
-}
-
+    public function up(): void
+    {
+        Schema::table('projects', function (Blueprint $table) {
+            //
+        });
+    }
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::table('certificates', function (Blueprint $table) {
+        Schema::table('projects', function (Blueprint $table) {
             //
         });
     }

@@ -9,20 +9,21 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-  public function up()
+   public function up()
 {
     Schema::table('projects', function (Blueprint $table) {
-        
         $table->foreignId('user_id')->constrained()->onDelete('cascade');
-
+        // ou, se não quiser foreign key:
+        // $table->unsignedBigInteger('user_id');
     });
 }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        //
-    }
+public function down()
+{
+    Schema::table('projects', function (Blueprint $table) {
+        $table->dropForeign(['user_id']);
+        $table->dropColumn('user_id');
+    });
+}
+
 };
