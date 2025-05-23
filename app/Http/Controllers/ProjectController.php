@@ -58,6 +58,14 @@ class ProjectController extends Controller
         return redirect()->route('projects.index')->with('success', 'Projeto salvo com sucesso!');
     }
 
+        public function destroy(Project $project)
+        {
+            $this->authorize('delete', $project); // opcional: usa policies
+            $project->delete();
+
+            return redirect()->route('projects.index')->with('success', 'Projeto deletado com sucesso!');
+        }
+
     // Você pode adicionar um método para fixar/desfixar um projeto, algo como:
     // public function togglePin(Project $project)
     // {

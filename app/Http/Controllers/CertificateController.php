@@ -62,11 +62,14 @@ class CertificateController extends Controller
 
         Certificate::create([
             'title' => $request->title,
-            'file_path' => $path,
             'description_certificate' => $request->description_certificate,
+            'file_path' => $path,
             'user_id' => $user->id,
-            'pinned' => false, // Padrão: não fixado ao criar
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'duration' => $request->duration,
         ]);
+
 
         return redirect()->route('certificates.index')->with('success', 'Certificado salvo com sucesso!');
     }
@@ -88,6 +91,15 @@ class CertificateController extends Controller
 
         return response()->download(storage_path("app/public/{$certificate->file_path}"));
     }
+    public function destroy(Certificate $certificate)
+    {
+        $this->authorize('delete', $certificate); // essa linha checa a policy
+        $certificate->delete();
+
+        return redirect()->route('certificates.index')->with('success', 'Certificado deletado com sucesso!');
+    }
+
+
 
     // Método para fixar/desfixar certificados
     // public function togglePin(Certificate $certificate)

@@ -27,4 +27,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Certificate::class);
     }
+    // Em App\Models\User.php
+    public function profile()
+    {
+        return $this->hasOne(UserProfile::class);
+    }
 }

@@ -19,6 +19,20 @@
             <label for="description">Descrição</label>
             <textarea class="form-control" name="description_certificate" id="description_certificate"></textarea>
         </div>
+        <div class="mb-3">
+            <label for="start_date">Data de Início</label>
+            <input type="date" name="start_date" id="start_date" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label for="end_date">Data de Término</label>
+            <input type="date" name="end_date" id="end_date" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label for="duration">Duração</label>
+            <input type="text" name="duration" id="duration" class="form-control" placeholder="Ex: 6 meses">
+        </div>
+
 
         <button class="btn btn-success">Salvar</button>
     </form>

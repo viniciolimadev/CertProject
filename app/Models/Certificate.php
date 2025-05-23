@@ -8,7 +8,17 @@ class Certificate extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'file_path', 'description_certificate', 'user_id'];
+   protected $fillable = [
+    'title',
+    'description_certificate',
+    'user_id',
+    'file_path',
+    'start_date',
+    'end_date',
+    'duration' // no fillable
+
+];
+
 
     public function user()
     {

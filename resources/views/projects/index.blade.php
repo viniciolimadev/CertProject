@@ -13,7 +13,20 @@
             <li class="list-group-item">
                 <h5>{{ $project->name }}</h5>
                 <p>{{ $project->description }}</p>
-                <a href="{{ $project->url_project }}" target="_blank">Acesse o projeto</a>
+
+                <div class="d-flex gap-2">
+                    <a href="{{ $project->url_project }}" target="_blank" class="btn btn-primary">
+                        Acesse o projeto
+                    </a>
+
+                    <form action="{{ route('projects.destroy', $project->id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja deletar este projeto?')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger">
+                            Deletar
+                        </button>
+                    </form>
+                </div>
             </li>
         @endforeach
     </ul>

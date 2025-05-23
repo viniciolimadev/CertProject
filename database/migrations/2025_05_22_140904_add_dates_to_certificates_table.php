@@ -9,17 +9,18 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up()
+    public function up()
 {
     Schema::table('certificates', function (Blueprint $table) {
-        $table->boolean('pinned')->default(false)->after('user_id'); 
+        $table->date('start_date')->nullable();
+        $table->date('end_date')->nullable();
     });
 }
 
 public function down()
 {
     Schema::table('certificates', function (Blueprint $table) {
-        $table->dropColumn('pinned');
+        $table->dropColumn(['start_date', 'end_date']);
     });
 }
 
