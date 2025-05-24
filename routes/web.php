@@ -8,112 +8,95 @@ use App\Http\Controllers\EducationController;
 use App\Http\Controllers\ExperienceController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PersonalInfoController;
-use App\Http\Controllers\ProfileController;
+// use App\Http\Controllers\ProfileController; // Provavelmente não é mais necessário se Breeze cuida do perfil
 use App\Http\Controllers\UserController;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
+// use Illuminate\Foundation\Auth\EmailVerificationRequest; // Não é usado diretamente aqui
+// use Illuminate\Support\Facades\Auth; // Não é usado diretamente aqui
+// use Illuminate\Http\Request; // Não é usado diretamente aqui
 
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
+*/
 
-// Rota inicial
-
-
-// Autenticação (login, registro, logout)
-Auth::routes();
+// Rota inicial (Dashboard ou Home após login)
+// A rota '/' agora aponta para HomeController, que já redireciona para login se não autenticado.
 Route::get('/', [HomeController::class, 'index'])->name('home')->middleware('auth');
 
-// Grupo protegido por login
+// Rotas de autenticação geradas pelo Breeze (geralmente incluídas via bootstrap/app.php ou um service provider)
+// Se você executou `php artisan breeze:install`, as rotas de auth (login, register, etc.)
+// são carregadas a partir de `routes/auth.php`.
+// A linha `Auth::routes();` foi removida pois era do laravel/ui.
+
+// Grupo de rotas que exigem autenticação
 Route::middleware(['auth'])->group(function () {
 
-    Route::get('/certificates/{certificate}/view', [CertificateController::class, 'viewPdf'])
-        ->middleware('auth')
-        ->name('certificates.view');
+    // Dashboard (se você estiver usando a rota padrão do Breeze)
+    // Se a sua HomeController@index já é o seu dashboard, a rota '/' acima já o cobre.
+    // Se você tem uma view específica para dashboard:
+    // Route::get('/dashboard', function () {
+    //     return view('dashboard');
+    // })->name('dashboard'); // A rota 'dashboard' é referenciada pelo Breeze
 
+    // Perfil do usuário (gerenciado pelo Breeze, geralmente em /profile)
+    // As rotas de ProfileController (update, delete) são geralmente definidas em routes/auth.php pelo Breeze.
+    // Se você tem uma rota customizada para ProfileController, adicione aqui.
+    // Ex: Route::get('/profile-custom', [ProfileController::class, 'edit'])->name('profile.custom.edit');
 
-    Route::get('/certificates', [CertificateController::class, 'index'])->name('certificates.index');
-
-    Route::get('/certificates/create', [CertificateController::class, 'create'])->name('certificates.create');
-
-    Route::post('/certificates', [CertificateController::class, 'store'])->name('certificates.store');
-
-    // Listar projetos do usuário autenticado
-    Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
-
-    // Formulário de criação
-    Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
-
-    // Armazenar novo projeto
-    Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
-
-    // Visualizar perfil de outro usuário
-    Route::get('/users/{id}', [UserController::class, 'show'])->name('users.show');
-
-    // Projetos (CRUD)
-    Route::resource('projects', ProjectController::class);
-
-    // Certificados (CRUD)
+    // Certificados
+    // Route::resource já cria: index, create, store, show, edit, update, destroy
+    // As rotas manuais para index, create, store, destroy foram removidas pois são cobertas pelo resource.
     Route::resource('certificates', CertificateController::class);
+    // Rota customizada para visualizar o PDF do certificado
+    Route::get('/certificates/{certificate}/view', [CertificateController::class, 'viewPdf'])->name('certificates.viewPdf'); // Nomeado para evitar conflito com show
 
-    // Route::patch('/certificates/{certificate}/pin', [CertificateController::class, 'pin'])->name('certificates.pin');
-    // Route::patch('/certificates/{certificate}/unpin', [CertificateController::class, 'unpin'])->name('certificates.unpin');
+    // Projetos
+    // As rotas manuais para index, create, store, destroy foram removidas.
+    Route::resource('projects', ProjectController::class);
+    // Se precisar de rotas adicionais para 'pin/unpin', elas seriam definidas aqui.
 
+    // Experiências
+    Route::resource('experiences', ExperienceController::class); // Já tem middleware('auth') do grupo pai
 
-    // Route::patch('/projects/{project}/pin', [ProjectController::class, 'pin'])->name('projects.pin');
-    // Route::patch('/projects/{project}/unpin', [ProjectController::class, 'unpin'])->name('projects.unpin');
-    Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
-
-    Route::delete('/certificates/{certificate}', [CertificateController::class, 'destroy'])->name('certificates.destroy');
-
-    Route::resource('experiences', ExperienceController::class)->middleware('auth');
-
-    Route::middleware(['auth'])->group(function () {
+    // Formações (Educations)
+    // O ->only([...]) é bom se você não precisa de todas as rotas do resource.
     Route::resource('educations', EducationController::class)->only(['index', 'create', 'store', 'destroy']);
 
-    Route::get('/curriculo', [App\Http\Controllers\CurriculoController::class, 'index'])->name('curriculo.index');
-    
-        
-      Route::get('/personal-info/edit', [PersonalInfoController::class, 'edit'])->name('personal_info.edit');
+    // Informações Pessoais
+    Route::get('/personal-info/edit', [PersonalInfoController::class, 'edit'])->name('personal_info.edit');
     Route::put('/personal-info/update', [PersonalInfoController::class, 'update'])->name('personal_info.update');
-   Route::get('/curriculo/exportar', [CurriculoController::class, 'export'])->name('curriculo.export');
+
+    // Currículo
+    Route::get('/curriculo', [CurriculoController::class, 'index'])->name('curriculo.index');
+    Route::get('/curriculo/exportar', [CurriculoController::class, 'export'])->name('curriculo.export');
+
+    // Visualizar perfil PÚBLICO de outro usuário (se for uma funcionalidade para usuários logados)
+    // Se esta rota é para ver o perfil de qualquer usuário (e não apenas o próprio ou públicos),
+    // a lógica de autorização deve estar no UserController@show.
+    Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show'); // {id} foi mudado para {user} para route model binding
+
 });
 
 
-// });
-
-
-//     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy'); // <- Esta linha adiciona a rota destroy
-//         Route::get('/dashboard', function () {
-//     return view('dashboard');
-
-//         // Rotas de autenticação com verificação
-// Auth::routes(['verify' => true]);
-
-// // Rota para mostrar aviso de verificação
-// Route::get('/email/verify', function () {
-//     return view('auth.verify-email');
-// })->middleware('auth')->name('verification.notice');
-
-// // Rota para envio do e-mail de verificação
-// Route::post('/email/verification-notification', function (Request $request) {
-//     $request->user()->sendEmailVerificationNotification();
-
-//     return back()->with('message', 'Link de verificação enviado!');
-// })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
-
-// // Rota para processar o clique no link de verificação
-// Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-//     $request->fulfill();
-
-//     return redirect('/home');
-// })->middleware(['auth', 'signed'])->name('verification.verify');
- 
-});
-
-
-
-// Projetos públicos de outros usuários (visível sem login)
+// Rotas Públicas (não exigem login)
+// Visualizar projetos públicos de outros usuários
 Route::get('/public-projects', [UserController::class, 'publicProjects'])->name('users.public-projects');
+
+// Explorar todos os projetos públicos (outra forma de listar projetos públicos)
 Route::get('/explore-projects', function () {
-    $projects = \App\Models\Project::where('public', true)->get();
-    return view('projects.explore', compact('projects'));
+    $projects = \App\Models\Project::where('public', true)->latest()->get(); // Adicionado latest()
+    return view('projects.explore', compact('projects')); // Certifique-se que a view projects.explore exista
 })->name('projects.explore');
+
+
+// As rotas de verificação de e-mail e outras rotas de autenticação do Breeze
+// são geralmente incluídas automaticamente a partir do arquivo `routes/auth.php`.
+// Se não estiverem, você pode requerer o arquivo aqui:
+// require __DIR__.'/auth.php'; // Descomente se as rotas do Breeze não estiverem carregando
+

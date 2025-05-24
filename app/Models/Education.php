@@ -9,9 +9,18 @@ class Education extends Model
 {
     use HasFactory;
 
-    // Tabela correta no banco
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
     protected $table = 'educations';
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'user_id',
         'degree',
@@ -20,7 +29,19 @@ class Education extends Model
         'end_date',
     ];
 
-    // Relação com o usuário
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'start_date' => 'date', // Adicionado
+        'end_date' => 'date',   // Adicionado
+    ];
+
+    /**
+     * Get the user that owns the education record.
+     */
     public function user()
     {
         return $this->belongsTo(User::class);

@@ -11,7 +11,6 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    // Permitir atribuição em massa
     protected $fillable = [
         'name',
         'email',
@@ -27,9 +26,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(Certificate::class);
     }
-    // Em App\Models\User.php
+    
     public function profile()
     {
         return $this->hasOne(UserProfile::class);
+    }
+
+    public function experiences()
+    {
+        return $this->hasMany(Experience::class);
+    }
+
+    // Certifique-se que este método existe
+    public function educations()
+    {
+        return $this->hasMany(Education::class);
     }
 }

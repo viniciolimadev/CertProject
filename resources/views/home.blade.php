@@ -1,204 +1,183 @@
-@extends('layout')
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Home') }}
+        </h2>
+    </x-slot>
 
-@section('title', 'Home')
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 sm:p-8 text-gray-900">
 
-@section('content')
+                    <h1 class="text-3xl font-bold mb-6 text-gray-800">Bem-vindo, {{ auth()->user()->name }}!</h1>
 
-    <style>
-        /* Cards certificados menores */
-        .card-certificate {
-            height: 320px;
-            /* altura menor */
-            max-width: 100%;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+                    <hr class="my-8 border-gray-300">
 
-        /* Embed PDF dentro do card certificado */
-        .card-certificate embed {
-            flex-shrink: 0;
-            height: 160px;
-            /* menor altura para embed */
-        }
+                    {{-- Informações Pessoais --}}
+                    <section class="mb-10">
+                        <h2 class="text-2xl font-semibold mb-5 text-gray-700">Informações Pessoais</h2>
+                        <div class="bg-gray-50 shadow-lg rounded-xl p-6 md:p-8">
+                            <div class="md:flex md:items-start">
+                                @if (!empty($profile->photo_path))
+                                    <div class="md:w-1/4 text-center mb-6 md:mb-0 md:mr-8">
+                                        <img src="{{ asset('storage/' . $profile->photo_path) }}" alt="Foto de {{ auth()->user()->name }}"
+                                            class="w-32 h-40 object-cover rounded-lg shadow-md mx-auto border-2 border-white">
+                                    </div>
+                                @endif
+                                <div class="{{ !empty($profile->photo_path) ? 'md:w-3/4' : 'w-full' }} space-y-3 text-gray-700">
+                                    <p><strong class="font-medium text-gray-900">Nome:</strong> {{ auth()->user()->name }}</p>
+                                    <p><strong class="font-medium text-gray-900">Telefone:</strong> {{ $profile->phone ?? 'Não informado' }}</p>
+                                    <p><strong class="font-medium text-gray-900">Cidade:</strong> {{ $profile->city ?? 'Não informado' }}</p>
+                                    <p><strong class="font-medium text-gray-900">Estado:</strong> {{ $profile->state ?? 'Não informado' }}</p>
+                                    <p><strong class="font-medium text-gray-900">E-mail:</strong> <a href="mailto:{{ auth()->user()->email }}" class="text-blue-600 hover:underline">{{ auth()->user()->email }}</a></p>
+                                    <div>
+                                        <strong class="font-medium text-gray-900">Redes Sociais:</strong>
+                                        @if (!empty($profile->social_links) && is_array($profile->social_links) && count($profile->social_links) > 0)
+                                            <ul class="mt-1 list-disc list-inside pl-5">
+                                                @foreach ($profile->social_links as $link)
+                                                    @if(!empty(trim($link)))
+                                                        <li><a href="{{ trim($link) }}" target="_blank" class="text-blue-600 hover:underline">{{ trim($link) }}</a></li>
+                                                    @endif
+                                                @endforeach
+                                            </ul>
+                                        @else
+                                            <span class="ml-2 text-gray-500">Não informado</span>
+                                        @endif
+                                    </div>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    </section>
 
-        /* Cards projetos tamanho fixo */
-        .card-project {
-            height: 350px;
-            max-width: 100%;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+                    <hr class="my-10 border-gray-300">
 
-        /* Texto com corte após 3 linhas para não quebrar layout */
-        .text-truncate-3 {
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+                    {{-- Formações Acadêmicas --}}
+                    <section class="mb-10">
+                        <h2 class="text-2xl font-semibold mb-5 text-gray-700">Formações Acadêmicas</h2>
+                        @if ($educations->isEmpty())
+                            <p class="text-gray-500">Sem formações cadastradas.</p>
+                        @else
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                @foreach ($educations as $edu)
+                                    <div class="bg-white shadow-lg rounded-xl p-5 flex flex-col h-full border border-gray-200">
+                                        <h5 class="text-lg font-bold text-gray-800 mb-1">{{ $edu->degree }}</h5>
+                                        <p class="text-gray-600 text-sm mb-2">{{ $edu->institution }}</p>
+                                        <small class="text-gray-500 text-xs mt-auto">
+                                            {{ $edu->start_date ? \Carbon\Carbon::parse($edu->start_date)->isoFormat('MMM YYYY') : 'N/A' }}
+                                            —
+                                            {{ $edu->end_date ? \Carbon\Carbon::parse($edu->end_date)->isoFormat('MMM YYYY') : 'Atual' }}
+                                        </small>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </section>
 
-        /* Para botões alinharem no rodapé */
-        .btn-bottom {
-            margin-top: auto;
-        }
-    </style>
+                    <hr class="my-10 border-gray-300">
 
-    <h1>Bem-vindo, {{ auth()->user()->name }}!</h1>
+                    {{-- Certificados --}}
+                    <section class="mb-10">
+                        <h2 class="text-2xl font-semibold mb-5 text-gray-700">Certificados</h2>
+                        @if ($certificates->isEmpty())
+                            <p class="text-gray-500">Sem certificados cadastrados.</p>
+                        @else
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                @foreach ($certificates as $certificate)
+                                    <div class="bg-white shadow-lg rounded-xl flex flex-col h-[350px] border border-gray-200">
+                                        <div class="p-5 flex-grow flex flex-col">
+                                            <h5 class="text-lg font-bold text-gray-800 mb-1">{{ $certificate->title }}</h5>
+                                            <p class="text-gray-600 text-sm mb-3 h-12 overflow-hidden"> {{-- Simula 3 linhas de texto --}}
+                                                {{ $certificate->description_certificate }}
+                                            </p>
+                                            <div class="flex-grow mb-3 bg-gray-100 rounded flex items-center justify-center min-h-[160px]">
+                                                <embed src="{{ asset('storage/' . $certificate->file_path) }}" width="100%" height="100%" type="application/pdf" class="rounded">
+                                            </div>
+                                        </div>
+                                        <div class="p-5 border-t border-gray-200">
+                                            <a href="{{ asset('storage/' . $certificate->file_path) }}" target="_blank"
+                                                class="block w-full text-center px-4 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-600 hover:text-white text-sm font-medium transition duration-150 ease-in-out">
+                                                Abrir em nova aba
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </section>
 
-    <hr>
+                    <hr class="my-10 border-gray-300">
 
-    <h2>Informações Pessoais</h2>
+                    {{-- Experiências --}}
+                    <section class="mb-10">
+                        <h2 class="text-2xl font-semibold mb-5 text-gray-700">Experiências Profissionais</h2>
+                        @if ($experiences->isEmpty())
+                            <p class="text-gray-500">Sem experiências profissionais cadastradas.</p>
+                        @else
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                @foreach ($experiences as $experience)
+                                    <div class="bg-white shadow-lg rounded-xl p-5 flex flex-col h-full border border-gray-200">
+                                        <h5 class="text-lg font-bold text-gray-800 mb-1">{{ $experience->position }} — <strong class="font-medium">{{ $experience->company }}</strong></h5>
+                                        @if ($experience->description)
+                                            <p class="text-gray-600 text-sm mb-2 flex-grow h-16 overflow-hidden"> {{-- Simula 3-4 linhas --}}
+                                                {{ $experience->description }}
+                                            </p>
+                                        @else
+                                            <div class="flex-grow"></div> {{-- Para manter alinhamento se não houver descrição --}}
+                                        @endif
+                                        <small class="text-gray-500 text-xs mt-auto">
+                                            {{ $experience->start_date ? \Carbon\Carbon::parse($experience->start_date)->isoFormat('MMM YYYY') : 'N/A' }}
+                                            —
+                                            {{ $experience->end_date ? \Carbon\Carbon::parse($experience->end_date)->isoFormat('MMM YYYY') : 'Atual' }}
+                                        </small>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </section>
 
-    <div class="card mb-4 shadow-sm p-3">
-        <div class="row align-items-center">
-            {{-- Foto do usuário --}}
-            @if (!empty($profile->photo_path))
-                <div class="col-md-3 text-center mb-3 mb-md-0">
-                    <img src="{{ asset('storage/' . $profile->photo_path) }}" alt="Foto de {{ auth()->user()->name }}"
-                        class="img-fluid shadow rounded" style="width: 105px; height: 140px; object-fit: cover;">
+                    <hr class="my-10 border-gray-300">
+
+                    {{-- Projetos --}}
+                    <section>
+                        <h2 class="text-2xl font-semibold mb-5 text-gray-700">Projetos</h2>
+                        @if ($projects->isEmpty())
+                            <p class="text-gray-500">Sem projetos cadastrados.</p>
+                        @else
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                @foreach ($projects as $project)
+                                    <div class="bg-white shadow-lg rounded-xl flex flex-col h-[280px] border border-gray-200"> {{-- Altura ajustada --}}
+                                        <div class="p-5 flex-grow flex flex-col">
+                                            <h5 class="text-lg font-bold text-gray-800 mb-1">{{ $project->name }}</h5>
+                                            @if ($project->description)
+                                                <p class="text-gray-600 text-sm mb-3 flex-grow h-16 overflow-hidden"> {{-- Simula 3-4 linhas --}}
+                                                    {{ $project->description }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                        @if ($project->url_project)
+                                            <div class="p-5 border-t border-gray-200">
+                                                <a href="{{ $project->url_project }}" target="_blank"
+                                                    class="block w-full text-center px-4 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-600 hover:text-white text-sm font-medium transition duration-150 ease-in-out">
+                                                    Abrir projeto
+                                                </a>
+                                            </div>
+                                        @else
+                                             <div class="p-5 border-t border-gray-200">
+                                                <span class="block w-full text-center px-4 py-2 border border-gray-300 text-gray-400 rounded-md text-sm font-medium">
+                                                    Sem link disponível
+                                                </span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </section>
 
                 </div>
-            @endif
-
-            {{-- Informações pessoais --}}
-            <div class="col-md-9">
-                <ul class="list-unstyled">
-                    <li><strong>Nome:</strong> {{ auth()->user()->name }}</li>
-                    <li><strong>Telefone:</strong> {{ $profile->phone ?? 'Não informado' }}</li>
-                    <li><strong>Cidade:</strong> {{ $profile->city ?? 'Não informado' }}</li>
-                    <li><strong>Estado:</strong> {{ $profile->state ?? 'Não informado' }}</li>
-                    <li><strong>E-mail:</strong> {{ auth()->user()->email }}</li>
-                    <li>
-                        <strong>Redes Sociais:</strong>
-                        @if (!empty($profile->social_links) && is_array($profile->social_links))
-                            <ul class="mb-0">
-                                @foreach ($profile->social_links as $link)
-                                    <li><a href="{{ $link }}" target="_blank">{{ $link }}</a></li>
-                                @endforeach
-                            </ul>
-                        @else
-                            Não informado
-                        @endif
-                    </li>
-                </ul>
             </div>
         </div>
     </div>
-
-
-    <hr>
-
-    <h2>Formações Acadêmicas</h2>
-    @if ($educations->isEmpty())
-        <p>Sem formações cadastradas.</p>
-    @else
-        <div class="row">
-            @foreach ($educations as $edu)
-                <div class="col-md-6 mb-4">
-                    <div class="card card-project shadow h-100">
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">{{ $edu->degree }}</h5>
-                            <p class="card-text">{{ $edu->institution }}</p>
-                            <small class="text-muted">
-                                {{ \Carbon\Carbon::parse($edu->start_date)->format('m/Y') }}
-                                —
-                                {{ $edu->end_date ? \Carbon\Carbon::parse($edu->end_date)->format('m/Y') : 'Atual' }}
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    @endif
-    <hr>
-
-
-    <h2>Certificados</h2>
-    @if ($certificates->isEmpty())
-        <p>Sem certificados.</p>
-    @else
-        <div class="row">
-            @foreach ($certificates as $certificate)
-                <div class="col-md-6 mb-4">
-                    <div class="card card-certificate shadow h-100">
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">{{ $certificate->title }}</h5>
-
-                            <p class="card-text text-truncate-3 flex-grow-1">{{ $certificate->description_certificate }}
-                            </p>
-
-                            <embed src="{{ asset('storage/' . $certificate->file_path) }}" width="100%"
-                                type="application/pdf" class="mb-2">
-
-                            <a href="{{ asset('storage/' . $certificate->file_path) }}" target="_blank"
-                                class="btn btn-outline-primary btn-sm btn-bottom">Abrir em nova aba</a>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    @endif
-
-    <hr>
-
-    <h2>Experiências</h2>
-    @if ($experiences->isEmpty())
-        <p>Sem experiências profissionais cadastradas.</p>
-    @else
-        <div class="row">
-            @foreach ($experiences as $experience)
-                <div class="col-md-6 mb-4">
-                    <div class="card shadow h-100 d-flex flex-column">
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">{{ $experience->position }} —
-                                <strong>{{ $experience->company }}</strong>
-                            </h5>
-
-                            @if ($experience->description)
-                                <p class="card-text text-truncate-3 flex-grow-1">{{ $experience->description }}</p>
-                            @endif
-
-                            <small class="text-muted mt-auto">
-                                {{ \Carbon\Carbon::parse($experience->start_date)->format('m/Y') }}
-                                —
-                                {{ $experience->end_date ? \Carbon\Carbon::parse($experience->end_date)->format('m/Y') : 'Atual' }}
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    @endif
-
-
-    <hr>
-
-    <h2>Projetos</h2>
-    @if ($projects->isEmpty())
-        <p>Sem projetos.</p>
-    @else
-        <div class="row">
-            @foreach ($projects as $project)
-                <div class="col-md-6 mb-4">
-                    <div class="card card-project shadow h-100">
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">{{ $project->name }}</h5>
-
-                            @if ($project->description)
-                                <p class="card-text text-truncate-3 flex-grow-1">{{ $project->description }}</p>
-                            @endif
-
-                            @if ($project->url_project)
-                                <a href="{{ $project->url_project }}" target="_blank"
-                                    class="btn btn-outline-primary btn-sm btn-bottom">Abrir projeto</a>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    @endif
-@endsection
+</x-app-layout>

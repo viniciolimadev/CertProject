@@ -10,10 +10,14 @@ class ProjectPolicy
 {
     /**
      * Determine whether the user can view any models.
+     * Este método é para a listagem geral de projetos (ex: um painel admin).
+     * Para a listagem de projetos do próprio usuário (ProjectController@index),
+     * a lógica de filtragem pelo user_id já acontece no controller.
+     * Se não há uma listagem geral de projetos de outros usuários, pode retornar false.
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true; // Ou false, dependendo se há uma rota que liste todos os projetos
     }
 
     /**
@@ -21,7 +25,11 @@ class ProjectPolicy
      */
     public function view(User $user, Project $project): bool
     {
-        return false;
+        // Usuário pode ver o projeto se for o dono OU se o projeto for público.
+        if ($project->public) {
+            return true;
+        }
+        return $user->id === $project->user_id;
     }
 
     /**
@@ -29,7 +37,8 @@ class ProjectPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        // Qualquer usuário autenticado pode criar um projeto.
+        return true;
     }
 
     /**
@@ -37,7 +46,8 @@ class ProjectPolicy
      */
     public function update(User $user, Project $project): bool
     {
-        return false;
+        // Apenas o dono do projeto pode atualizá-lo.
+        return $user->id === $project->user_id;
     }
 
     /**
@@ -45,6 +55,7 @@ class ProjectPolicy
      */
     public function delete(User $user, Project $project): bool
     {
+       // Apenas o dono do projeto pode deletá-lo.
        return $user->id === $project->user_id;
     }
 
@@ -53,7 +64,8 @@ class ProjectPolicy
      */
     public function restore(User $user, Project $project): bool
     {
-        return false;
+        // Apenas o dono do projeto pode restaurá-lo (se usar SoftDeletes).
+        return $user->id === $project->user_id;
     }
 
     /**
@@ -61,6 +73,7 @@ class ProjectPolicy
      */
     public function forceDelete(User $user, Project $project): bool
     {
-        return false;
+        // Apenas o dono do projeto pode deletá-lo permanentemente (se usar SoftDeletes).
+        return $user->id === $project->user_id;
     }
 }

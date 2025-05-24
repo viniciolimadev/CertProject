@@ -1,108 +1,126 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreProjectRequest; // Alterado de Illuminate\Http\Request
+// Se você criar um UpdateProjectRequest, adicione-o aqui também.
+// use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Project;
+use App\Models\User; // Adicionado para type hinting, embora Auth::user() retorne o model User
 use Illuminate\Support\Facades\Auth;
+// Removido: use Illuminate\Http\Request; (a menos que outros métodos ainda o usem sem FormRequest)
 
 class ProjectController extends Controller
 {
+    /**
+     * Display a listing of the resource.
+     */
     public function index()
     {
+        // O middleware 'auth' na rota já garante que o usuário está logado.
         $user = Auth::user();
+        // $projects = Project::where('user_id', $user->id)->get();
+        // Melhor usar o relacionamento para carregar os projetos do usuário:
+        /** @var \App\Models\User $user */ // Adicione esta linha
+        $user = Auth::user();
+        $projects = $user->projects()->latest()->get();
+        $projects = $user->projects()->latest()->get(); // Adicionado latest() para ordenar
 
-        if (!$user) {
-            return redirect()->route('login')->withErrors('Você precisa estar logado para ver seus projetos.');
-        }
-
-        // Busca projetos fixados e não fixados do usuário
-        // $projectsPinned = Project::where('user_id', $user->id)
-        //                           ->where('pinned', true)
-        //                           ->get();
-
-        $projects = Project::where('user_id', $user->id)->get();
-
-        // Passa para a view os dois grupos de projetos
         return view('projects.index', compact('projects'));
     }
 
+    /**
+     * Show the form for creating a new resource.
+     */
     public function create()
     {
-        return view('projects.create');  // Retorna a view para criar um projeto
+        // Autorização para criar pode ser verificada aqui se necessário,
+        // ou no FormRequest se a lógica for simples (como Auth::check()).
+        // $this->authorize('create', Project::class); // Exemplo com Policy
+        return view('projects.create');
     }
 
-    public function store(Request $request)
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreProjectRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'url_project' => 'nullable|url',
-            'public' => 'nullable|boolean',
-        ]);
+        $validatedData = $request->validated();
 
+        /** @var \App\Models\User $user */ // Adicione esta linha
         $user = Auth::user();
 
-        if (!$user) {
-            return redirect()->route('login')->withErrors('Você precisa estar logado para criar um projeto.');
-        }
-
-        Project::create([
-            'name' => $request->name,
-            'description' => $request->description,
-            'url_project' => $request->url_project,
-            'public' => $request->has('public'),
-            'user_id' => $user->id,
-            'pinned' => false, // padrão: não fixado ao criar
+        $user->projects()->create([ // Agora use a variável $user type-hinted
+            'name' => $validatedData['name'],
+            'description' => $validatedData['description'] ?? null,
+            'url_project' => $validatedData['url_project'] ?? null,
+            'public' => $validatedData['public'],
+            'pinned' => false,
         ]);
 
         return redirect()->route('projects.index')->with('success', 'Projeto salvo com sucesso!');
     }
 
-        public function destroy(Project $project)
-        {
-            $this->authorize('delete', $project); // opcional: usa policies
-            $project->delete();
+    /**
+     * Display the specified resource.
+     * (Adicionando um método show como exemplo, se você não tiver um)
+     */
+    public function show(Project $project)
+    {
+        // Autoriza o usuário a ver este projeto específico
+        // A Policy ProjectPolicy@view será chamada
+        $this->authorize('view', $project);
 
-            return redirect()->route('projects.index')->with('success', 'Projeto deletado com sucesso!');
-        }
+        return view('projects.show', compact('project')); // Crie esta view se não existir
+    }
 
-    // Você pode adicionar um método para fixar/desfixar um projeto, algo como:
-    // public function togglePin(Project $project)
+    /**
+     * Show the form for editing the specified resource.
+     * (Adicionando um método edit como exemplo)
+     */
+    public function edit(Project $project)
+    {
+        // Autoriza o usuário a editar este projeto específico
+        // A Policy ProjectPolicy@update será chamada (geralmente a mesma lógica de 'edit')
+        $this->authorize('update', $project);
+
+        return view('projects.edit', compact('project')); // Crie esta view se não existir
+    }
+
+    /**
+     * Update the specified resource in storage.
+     * (Adicionando um método update como exemplo)
+     */
+    // public function update(UpdateProjectRequest $request, Project $project)
     // {
-    //     $user = Auth::user();
-
-    //     // Verifica se o projeto pertence ao usuário
-    //     if ($project->user_id !== $user->id) {
-    //         abort(403);
-    //     }
-
-    //     $project->pinned = !$project->pinned;
-    //     $project->save();
-
-    //     return redirect()->back()->with('success', 'Status de fixação atualizado!');
-   
+    //     // A autorização (quem pode atualizar) viria do UpdateProjectRequest ou daqui:
+    //     $this->authorize('update', $project);
+    //
+    //     $validatedData = $request->validated();
+    //
+    //     $project->update([
+    //         'name' => $validatedData['name'],
+    //         'description' => $validatedData['description'] ?? null,
+    //         'url_project' => $validatedData['url_project'] ?? null,
+    //         'public' => $validatedData['public'],
+    //     ]);
+    //
+    //     return redirect()->route('projects.index')->with('success', 'Projeto atualizado com sucesso!');
     // }
-//     public function pin(Project $project)
-// {
-//     if ($project->user_id !== Auth::id()) {
-//         abort(403);
-//     }
 
-//     $project->pinned = true;
-//     $project->save();
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Project $project)
+    {
+        // A Policy ProjectPolicy@delete será chamada
+        $this->authorize('delete', $project);
 
-//     return redirect()->back()->with('success', 'Projeto fixado com sucesso.');
-// }
+        $project->delete();
 
-// public function unpin(Project $project)
-// {
-//     if ($project->user_id !== Auth::id()) {
-//         abort(403);
-//     }
+        return redirect()->route('projects.index')->with('success', 'Projeto deletado com sucesso!');
+    }
 
-//     $project->pinned = false;
-//     $project->save();
-
-//     return redirect()->back()->with('success', 'Projeto desafixado com sucesso.');
-// }
+    // Métodos de pin/unpin comentados foram mantidos como estavam no seu original.
+    // Se for implementá-los, também devem ter autorização.
 }

@@ -2,67 +2,55 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreExperienceRequest; // Adicionado
 use App\Models\Experience;
+use App\Models\User; // Adicionado para type hinting
 use Illuminate\Support\Facades\Auth;
+// Remova Illuminate\Http\Request se não for mais usado por outros métodos
 
 class ExperienceController extends Controller
 {
+    public function __construct()
+    {
+        // Aplicar middleware de autenticação aqui ou nas rotas
+        // $this->middleware('auth');
+    }
+
     public function index()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
-
-        if (!$user) {
-            return redirect()->route('login')->withErrors('Você precisa estar logado para ver suas experiências.');
-        }
-
-        $experiences = Experience::where('user_id', $user->id)
-            ->latest()
-            ->get();
+        // A verificação if (!$user) é desnecessária se a rota estiver protegida por middleware 'auth'
+        $experiences = $user->experiences()->latest()->get();
 
         return view('experiences.index', compact('experiences'));
     }
 
     public function create()
     {
+        $this->authorize('create', Experience::class); // Usando Policy
         return view('experiences.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreExperienceRequest $request) // Alterado para StoreExperienceRequest
     {
+        // Autorização e validação já foram feitas pelo StoreExperienceRequest.
+        $validatedData = $request->validated();
+
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        if (!$user) {
-            return redirect()->route('login')->withErrors('Você precisa estar logado para adicionar uma experiência.');
-        }
-
-        $request->validate([
-            'position' => 'required|string|max:255',
-            'company' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
-
-        Experience::create([
-            'user_id'    => $user->id,
-            'position'   => $request->position,
-            'company'    => $request->company,
-            'description'=> $request->description,
-            'start_date' => $request->start_date,
-            'end_date'   => $request->end_date,
-        ]);
+        $user->experiences()->create($validatedData);
 
         return redirect()->route('experiences.index')->with('success', 'Experiência adicionada com sucesso!');
     }
 
+    // Adicionar métodos show(Experience $experience) e edit(Experience $experience) se necessário,
+    // usando $this->authorize('view', $experience) e $this->authorize('update', $experience) respectivamente.
+
     public function destroy(Experience $experience)
     {
-        $user = Auth::user();
-
-        if ($experience->user_id !== $user->id) {
-            abort(403, 'Você não tem permissão para excluir esta experiência.');
-        }
+        $this->authorize('delete', $experience); // Usando Policy
 
         $experience->delete();
 

@@ -13,11 +13,12 @@ return new class extends Migration
     {
         Schema::create('projects', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('url_project')->nullable();
             $table->boolean('public')->default(false);
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            // $table->boolean('pinned')->default(false); // Se a coluna 'pinned' ainda for necessária
             $table->timestamps();
         });
     }
