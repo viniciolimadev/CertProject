@@ -10,9 +10,6 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PersonalInfoController;
 // use App\Http\Controllers\ProfileController; // Provavelmente não é mais necessário se Breeze cuida do perfil
 use App\Http\Controllers\UserController;
-// use Illuminate\Foundation\Auth\EmailVerificationRequest; // Não é usado diretamente aqui
-// use Illuminate\Support\Facades\Auth; // Não é usado diretamente aqui
-// use Illuminate\Http\Request; // Não é usado diretamente aqui
 
 /*
 |--------------------------------------------------------------------------
@@ -26,46 +23,30 @@ use App\Http\Controllers\UserController;
 */
 
 // Rota inicial (Dashboard ou Home após login)
-// A rota '/' agora aponta para HomeController, que já redireciona para login se não autenticado.
 Route::get('/', [HomeController::class, 'index'])->name('home')->middleware('auth');
 
-// Rotas de autenticação geradas pelo Breeze (geralmente incluídas via bootstrap/app.php ou um service provider)
-// Se você executou `php artisan breeze:install`, as rotas de auth (login, register, etc.)
-// são carregadas a partir de `routes/auth.php`.
-// A linha `Auth::routes();` foi removida pois era do laravel/ui.
+// Adicionando a rota nomeada 'dashboard' que o Breeze espera
+Route::get('/dashboard', [HomeController::class, 'index'])->middleware(['auth'])->name('dashboard');
+// Se você tiver uma view específica para dashboard, poderia ser:
+// Route::get('/dashboard', function () {
+//     return view('dashboard'); // Certifique-se que resources/views/dashboard.blade.php existe
+// })->middleware(['auth', 'verified'])->name('dashboard');
 
-// Grupo de rotas que exigem autenticação
+
 Route::middleware(['auth'])->group(function () {
 
-    // Dashboard (se você estiver usando a rota padrão do Breeze)
-    // Se a sua HomeController@index já é o seu dashboard, a rota '/' acima já o cobre.
-    // Se você tem uma view específica para dashboard:
-    // Route::get('/dashboard', function () {
-    //     return view('dashboard');
-    // })->name('dashboard'); // A rota 'dashboard' é referenciada pelo Breeze
-
-    // Perfil do usuário (gerenciado pelo Breeze, geralmente em /profile)
-    // As rotas de ProfileController (update, delete) são geralmente definidas em routes/auth.php pelo Breeze.
-    // Se você tem uma rota customizada para ProfileController, adicione aqui.
-    // Ex: Route::get('/profile-custom', [ProfileController::class, 'edit'])->name('profile.custom.edit');
-
     // Certificados
-    // Route::resource já cria: index, create, store, show, edit, update, destroy
-    // As rotas manuais para index, create, store, destroy foram removidas pois são cobertas pelo resource.
     Route::resource('certificates', CertificateController::class);
-    // Rota customizada para visualizar o PDF do certificado
-    Route::get('/certificates/{certificate}/view', [CertificateController::class, 'viewPdf'])->name('certificates.viewPdf'); // Nomeado para evitar conflito com show
-
+    Route::get('/certificates/{certificate}/view', [CertificateController::class, 'viewPdf'])->name('certificates.viewPdf');
+    Route::get('/certificates/{certificate}/download', [CertificateController::class, 'download'])->name('certificates.download');
+    
     // Projetos
-    // As rotas manuais para index, create, store, destroy foram removidas.
     Route::resource('projects', ProjectController::class);
-    // Se precisar de rotas adicionais para 'pin/unpin', elas seriam definidas aqui.
 
     // Experiências
-    Route::resource('experiences', ExperienceController::class); // Já tem middleware('auth') do grupo pai
+    Route::resource('experiences', ExperienceController::class);
 
     // Formações (Educations)
-    // O ->only([...]) é bom se você não precisa de todas as rotas do resource.
     Route::resource('educations', EducationController::class)->only(['index', 'create', 'store', 'destroy']);
 
     // Informações Pessoais
@@ -76,27 +57,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/curriculo', [CurriculoController::class, 'index'])->name('curriculo.index');
     Route::get('/curriculo/exportar', [CurriculoController::class, 'export'])->name('curriculo.export');
 
-    // Visualizar perfil PÚBLICO de outro usuário (se for uma funcionalidade para usuários logados)
-    // Se esta rota é para ver o perfil de qualquer usuário (e não apenas o próprio ou públicos),
-    // a lógica de autorização deve estar no UserController@show.
-    Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show'); // {id} foi mudado para {user} para route model binding
+    // Visualizar perfil PÚBLICO de outro usuário
+    Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
 
 });
 
 
-// Rotas Públicas (não exigem login)
-// Visualizar projetos públicos de outros usuários
+// Rotas Públicas
 Route::get('/public-projects', [UserController::class, 'publicProjects'])->name('users.public-projects');
-
-// Explorar todos os projetos públicos (outra forma de listar projetos públicos)
 Route::get('/explore-projects', function () {
-    $projects = \App\Models\Project::where('public', true)->latest()->get(); // Adicionado latest()
+    $projects = \App\Models\Project::where('public', true)->latest()->get();
     return view('projects.explore', compact('projects')); // Certifique-se que a view projects.explore exista
 })->name('projects.explore');
 
 
-// As rotas de verificação de e-mail e outras rotas de autenticação do Breeze
-// são geralmente incluídas automaticamente a partir do arquivo `routes/auth.php`.
-// Se não estiverem, você pode requerer o arquivo aqui:
-// require __DIR__.'/auth.php'; // Descomente se as rotas do Breeze não estiverem carregando
+// Inclui as rotas de autenticação do Breeze
+require __DIR__.'/auth.php';
 

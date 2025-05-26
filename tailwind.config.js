@@ -1,15 +1,21 @@
-// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
-export default {
+import defaultTheme from 'tailwindcss/defaultTheme';
+import forms from '@tailwindcss/forms';
+// Importe o plugin line-clamp
+import lineClamp from '@tailwindcss/line-clamp'; // <--- Adicione esta linha se não existir
+
+module.exports = {
   content: [
-    './resources/**/*.blade.php',
-    './resources/**/*.js',
-    './resources/**/*.vue',
+    "./resources/**/*.blade.php",
+    "./resources/**/*.js",
+    "./resources/**/*.vue",
   ],
   theme: {
     extend: {},
   },
   plugins: [
-    require('@tailwindcss/forms'), // Since you have @tailwindcss/forms installed
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/line-clamp'), // Adicionar esta linha
   ],
+  
 };
