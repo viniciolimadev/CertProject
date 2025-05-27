@@ -20,28 +20,71 @@
                 @endif
 
                 {{-- Personal Data Section --}}
-                <section class="mb-8 print:mb-6">
-                    <h2 class="text-xl md:text-2xl font-semibold text-gray-700 border-b-2 border-gray-300 pb-2 mb-4 print:border-gray-500">Dados Pessoais</h2>
-                    <div class="space-y-2 text-sm md:text-base text-gray-700">
-                        <p><strong class="font-medium text-gray-900">Nome completo:</strong> {{ $user->name }}</p>
-                        <p><strong class="font-medium text-gray-900">Endereço:</strong> {{ $profile->city ?? 'Cidade não informada' }}, {{ $profile->state ?? 'Estado não informado' }}</p>
-                        <p><strong class="font-medium text-gray-900">Telefone:</strong> {{ $profile->phone ?? 'Não informado' }}</p>
-                        <p><strong class="font-medium text-gray-900">Email:</strong> <a href="mailto:{{ $user->email }}" class="text-blue-600 hover:text-blue-800 hover:underline">{{ $user->email }}</a></p>
-                        @if(!empty($profile->social_links))
-                            <div>
-                                <strong class="font-medium text-gray-900">Redes Sociais:</strong>
-                                <span class="ml-2">
+            <section class="mb-8 print:mb-6">
+                <h2 class="text-xl md:text-2xl font-semibold text-gray-700 border-b-2 border-gray-300 pb-2 mb-4 print:border-gray-500">Dados Pessoais</h2>
+                <div class="space-y-2 text-sm md:text-base text-gray-700">
+                    <p><strong class="font-medium text-gray-900">Nome completo:</strong> {{ $user->name }}</p>
+
+                    {{-- Data de Nascimento e Idade --}}
+                    @if ($profile->date_of_birth)
+                        <p><strong class="font-medium text-gray-900">Data de Nascimento:</strong> {{ $profile->date_of_birth->isoFormat('DD/MM/YYYY') }} ({{ $profile->date_of_birth->age }} anos)</p>
+                    @endif
+
+                    {{-- Estado Civil --}}
+                    @if ($profile->marital_status)
+                        <p><strong class="font-medium text-gray-900">Estado Civil:</strong> {{ $profile->marital_status }}</p>
+                    @endif
+
+                    {{-- Endereço Completo --}}
+                    <p><strong class="font-medium text-gray-900">Endereço:</strong>
+                        {{ $profile->street_name ?? 'Rua não informada' }}{{ $profile->street_number ? ', ' . $profile->street_number : ', S/N' }}
+                        @if($profile->address_complement), {{ $profile->address_complement }}@endif
+                        <br>
+                        {{ $profile->bairro ?? 'Bairro não informado' }} - {{ $profile->city ?? 'Cidade não informada' }},
+                        {{ $profile->state ?? 'UF' }}
+                        @if($profile->cep)<br>CEP: {{ $profile->cep }}@endif
+                    </p>
+
+                    <p><strong class="font-medium text-gray-900">Telefone:</strong> {{ $profile->phone ?? 'Não informado' }}</p>
+                    <p><strong class="font-medium text-gray-900">Email:</strong> <a href="mailto:{{ $user->email }}" class="text-blue-600 hover:text-blue-800 hover:underline">{{ $user->email }}</a></p>
+
+                    {{-- Redes Sociais Refatoradas --}}
+                    @if (!empty($profile->social_links))
+                        <div class="mt-3">
+                            <strong class="font-medium text-gray-900 block mb-1">Redes Sociais:</strong> 
+                            <ul class="list-none pl-0 space-y-1">
                                 @php
-                                    $links = is_array($profile->social_links) ? $profile->social_links : explode(',', $profile->social_links);
+                                    $linksArray = [];
+                                    if (is_string($profile->social_links)) {
+                                        $linksArray = array_filter(array_map('trim', explode(',', $profile->social_links)));
+                                    } elseif (is_array($profile->social_links)) {
+                                        $linksArray = array_filter(array_map('trim', $profile->social_links));
+                                    }
                                 @endphp
-                                @foreach($links as $link)
-                                    <a href="{{ trim($link) }}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline">{{ trim($link) }}</a>@if(!$loop->last), @endif
+                                @foreach ($linksArray as $link)
+                                    @php
+                                        $trimmedLink = $link;
+                                        $displayName = $trimmedLink;
+                                        $urlHost = parse_url($trimmedLink, PHP_URL_HOST);
+                                        if ($urlHost) {
+                                            $urlHost = str_replace('www.', '', $urlHost);
+                                            if (stripos($urlHost, 'linkedin.com') !== false) $displayName = 'LinkedIn';
+                                            elseif (stripos($urlHost, 'github.com') !== false) $displayName = 'GitHub';
+                                            elseif (stripos($urlHost, 'twitter.com') !== false || stripos($urlHost, 'x.com') !== false) $displayName = 'Twitter/X';
+                                            elseif (stripos($urlHost, 'facebook.com') !== false) $displayName = 'Facebook';
+                                            elseif (stripos($urlHost, 'instagram.com') !== false) $displayName = 'Instagram';
+                                            elseif (stripos($urlHost, 'behance.net') !== false) $displayName = 'Behance';
+                                            elseif (stripos($urlHost, 'dribbble.com') !== false) $displayName = 'Dribbble';
+                                            else { $domainParts = explode('.', $urlHost); $displayName = ucfirst($domainParts[0]); }
+                                        } else { $displayName = "Link"; }
+                                    @endphp
+                                    <li><a href="{{ $trimmedLink }}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline">{{ $displayName }}</a></li>
                                 @endforeach
-                                </span>
-                            </p>
-                        @endif
-                    </div>
-                </section>
+                            </ul>
+                        </div>
+                    @endif
+                </div>
+            </section>
 
                 {{-- Education Section --}}
                 <section class="mb-8 print:mb-6">
@@ -107,7 +150,7 @@
                             <div>
                                 <p><strong class="font-medium text-gray-900">{{ $project->name }}</strong></p>
                                 @if($project->description)
-                                <p class="mt-1 text-gray-600">{{ $project->description }}</p>
+                                <p class="mt-1 text-gray-600">{{ \Illuminate\Support\Str::limit($project->description, 180, '...') }}</p>
                                 @endif
                                 @if($project->url_project)
                                     <p class="mt-1"><a href="{{ $project->url_project }}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline">{{ $project->url_project }}</a></p>

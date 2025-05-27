@@ -10,76 +10,84 @@ use Illuminate\Validation\Rule; // Necessário para Rule
 class UpdatePersonalInfoRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Determina se o usuário está autorizado a fazer esta requisição.
      *
      * @return bool
      */
     public function authorize(): bool
     {
         // Apenas o usuário autenticado pode atualizar suas próprias informações.
-        // A rota para este controller já deve estar protegida pelo middleware 'auth'.
         return Auth::check();
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Obtém as regras de validação que se aplicam à requisição.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    // Dentro do método rules()
+public function rules(): array
     {
-        $userId = Auth::id(); // Pega o ID do usuário autenticado
+        $userId = Auth::id();
 
         return [
-            // Regras para o modelo User
-            'name' => 'required|string|max:255',
-            'email' => [ // E-mail do usuário (User model)
-                'required', // Mantido como required, pois é um campo importante do usuário
+            // --- GARANTA QUE ESTAS REGRAS ESTEJAM AQUI ---
+            'name' => 'required|string|max:255', // <--- ESSENCIAL!
+            'email' => [                          // <--- ESSENCIAL!
+                'required',
                 'string',
                 'email',
                 'max:255',
-                Rule::unique(User::class)->ignore($userId), // Ignora o e-mail do próprio usuário na verificação de unicidade
+                Rule::unique(User::class)->ignore($userId),
             ],
+            // --- FIM DAS REGRAS ESSENCIAIS ---
+
             // Regras para o modelo UserProfile
             'phone' => 'nullable|string|max:20',
+            'social_links' => 'nullable|string|max:1000',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'cep' => 'nullable|string|max:9',
+            'street_name' => 'nullable|string|max:255',
+            'street_number' => 'nullable|string|max:50',
+            'address_complement' => 'nullable|string|max:255',
+            'bairro' => 'nullable|string|max:150',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
-            'social_links' => 'nullable|string|max:1000', // Aumentado o limite para redes sociais
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // validação da imagem (até 2MB)
+            'date_of_birth' => ['nullable', 'date', 'before_or_equal:today'],
+            'nationality' => ['nullable', 'string', 'max:100'],
+            'marital_status' => 'nullable|string|max:50',
+            'about_me' => 'nullable|string|max:2000',
         ];
     }
 
-    /**
-     * Get custom attributes for validator errors.
-     *
-     * @return array<string, string>
-     */
-    public function attributes(): array
-    {
-        return [
-            'name' => 'nome',
-            'phone' => 'telefone',
-            'photo' => 'foto de perfil',
-            'social_links' => 'redes sociais',
-            'city' => 'cidade',
-            'state' => 'estado',
-        ];
-    }
+// Dentro do método attributes()
+public function attributes(): array
+{
+    return [
+        // ... (atributos existentes) ...
+        'street_number' => 'número',
+        'address_complement' => 'complemento',
+        'bairro' => 'bairro',
+        'marital_status' => 'estado civil',
+        'date_of_birth' => 'data de nascimento',
+        'nationality' => 'nacionalidade',
+        'about_me' => 'sobre mim',
+    ];
+}
 
     /**
-     * Prepare the data for validation.
+     * Prepara os dados para validação.
      *
      * @return void
      */
     protected function prepareForValidation()
     {
-        // Converte a string de social_links em array antes da validação,
-        // se a validação precisasse que fosse um array.
-        // No entanto, como a regra é 'nullable|string', o controller fará a conversão.
-        // Se quisesse validar como array:
-        // if ($this->social_links && is_string($this->social_links)) {
+        // Aqui você poderia, por exemplo, limpar a máscara do CEP antes de validar/salvar,
+        // mas por enquanto, manteremos simples, validando como string.
+        // Exemplo:
+        // if ($this->cep) {
         //     $this->merge([
-        //         'social_links' => array_filter(array_map('trim', explode(',', $this->social_links))),
+        //         'cep' => preg_replace('/[^0-9]/', '', $this->cep)
         //     ]);
         // }
     }

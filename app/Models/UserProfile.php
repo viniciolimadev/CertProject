@@ -2,44 +2,53 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory; // Adicionado
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo; // Importar BelongsTo para type hinting
 
 class UserProfile extends Model
 {
-    use HasFactory; // Adicionado
+    use HasFactory;
 
     /**
-     * The attributes that are mass assignable.
+     * Os atributos que são atribuíveis em massa.
      *
      * @var array<int, string>
      */
     protected $fillable = [
-        'user_id',
-        'city',
-        'state',
-        'phone',
-        'email', // Considere se este campo é necessário ou se é redundante com User->email
-        'social_links',
-        'photo_path', // Adicionado para permitir atribuição em massa da foto
-    ];
+    'user_id',
+    'phone',
+    'city',
+    'state',
+    'social_links',
+    'photo_path',
+    'cep',
+    'street_name',
+    'street_number',
+    'address_complement',
+    'bairro',
+    'marital_status',
+    'date_of_birth',
+    'nationality',
+    'about_me',
+];
 
     /**
-     * The attributes that should be cast.
+     * Os atributos que devem ser convertidos para tipos nativos.
      *
      * @var array<string, string>
      */
     protected $casts = [
-        'social_links' => 'array',
-        // Se 'email' for mantido e deva ser verificado como um endereço de e-mail válido no nível do modelo
-        // (embora a validação de requisição seja o local primário para isso):
-        // 'email' => 'string',
+        'date_of_birth' => 'date',
+        'social_links' => 'array', // Converte a coluna 'social_links' para array (e vice-versa)
     ];
 
     /**
-     * Get the user that owns the profile.
+     * Obtém o usuário ao qual este perfil pertence.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function user()
+    public function user(): BelongsTo // Adicionado type hint para clareza
     {
         return $this->belongsTo(User::class);
     }

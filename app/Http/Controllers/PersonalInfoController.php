@@ -2,83 +2,90 @@
 
 namespace App\Http\Controllers;
 
-// Remova Illuminate\Http\Request se não for mais usado diretamente
-use App\Http\Requests\UpdatePersonalInfoRequest; // Adicionado
+use App\Http\Requests\UpdatePersonalInfoRequest;
 use Illuminate\Support\Facades\Auth;
 use App\Models\UserProfile;
-use App\Models\User; // Para type hinting e operações
-use Illuminate\Support\Facades\Storage; // Para deletar foto antiga
+use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 class PersonalInfoController extends Controller
 {
     public function __construct()
     {
-        // As rotas para este controller já devem estar protegidas pelo middleware 'auth'
-        // em routes/web.php
+        // Middleware 'auth' já deve proteger estas rotas.
     }
 
-    // Mostrar formulário de edição
+    /**
+     * Mostra o formulário de edição de informações pessoais.
+     *
+     * @return \Illuminate\Contracts\View\View
+     */
     public function edit()
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // Garante que o perfil exista ou cria um novo para o usuário
-        // O método firstOrCreate é mais idiomático aqui.
+        // Garante que o perfil exista ou cria um novo.
         $profile = $user->profile()->firstOrCreate(
-            ['user_id' => $user->id] // Condição para encontrar
-            // Não precisa passar dados para criar aqui, pois serão preenchidos no formulário
+            ['user_id' => $user->id]
         );
 
         return view('personal_info.edit', compact('user', 'profile'));
     }
 
-    // Atualizar dados pessoais
-    public function update(UpdatePersonalInfoRequest $request) // Alterado para UpdatePersonalInfoRequest
+    /**
+     * Atualiza as informações pessoais e o perfil do usuário.
+     *
+     * @param  \App\Http\Requests\UpdatePersonalInfoRequest  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    
+
+    public function update(UpdatePersonalInfoRequest $request)
     {
-        // A autorização (Auth::check()) e a validação já foram feitas pelo FormRequest.
+        // A validação já foi feita pelo FormRequest.
         $validatedData = $request->validated();
 
         /** @var \App\Models\User $user */
-        $user = Auth::user(); // Ou $request->user();
+        $user = $request->user(); // $request->user() é uma forma comum de obter o usuário autenticado.
 
-        // 1. Atualizar dados do modelo User
+        // 1. Atualizar dados do modelo User (Nome e Email)
         $userDataToUpdate = [
             'name' => $validatedData['name'],
         ];
-        // Apenas atualiza o email se ele foi realmente alterado e é diferente do atual
         if (isset($validatedData['email']) && $user->email !== $validatedData['email']) {
             $userDataToUpdate['email'] = $validatedData['email'];
-            $userDataToUpdate['email_verified_at'] = null; // Invalida verificação de e-mail
-            // Considere reenviar o e-mail de verificação aqui se a lógica for necessária
-            // $user->sendEmailVerificationNotification();
+            $userDataToUpdate['email_verified_at'] = null;
         }
         $user->update($userDataToUpdate);
 
-
         // 2. Preparar dados para o modelo UserProfile
         $profileData = [
-            'phone' => $validatedData['phone'] ?? null,
+            // ... (outros campos) ...
+            'cep' => $validatedData['cep'] ?? null,
+            'street_name' => $validatedData['street_name'] ?? null,
+            'street_number' => $validatedData['street_number'] ?? null,
+            'address_complement' => $validatedData['address_complement'] ?? null,
+            'bairro' => $validatedData['bairro'] ?? null,
             'city' => $validatedData['city'] ?? null,
             'state' => $validatedData['state'] ?? null,
-            // O e-mail do UserProfile pode ser redundante se for sempre o mesmo do User.
-            // Se decidir mantê-lo, certifique-se de que está sincronizado.
-            // 'email' => $validatedData['email'], // Removido para evitar redundância, use $user->email
+            'date_of_birth' => $validatedData['date_of_birth'] ?? null,
+            'nationality' => $validatedData['nationality'] ?? null,
+            'marital_status' => $validatedData['marital_status'] ?? null,
+            'about_me' => $validatedData['about_me'] ?? null,
         ];
 
-        // Converte a string de social_links em array
-        if (isset($validatedData['social_links']) && is_string($validatedData['social_links'])) {
-            $profileData['social_links'] = array_filter(array_map('trim', explode(',', $validatedData['social_links'])));
-        } elseif (isset($validatedData['social_links']) && is_array($validatedData['social_links'])) {
-            $profileData['social_links'] = array_filter(array_map('trim', $validatedData['social_links']));
+        // Trata os social_links (mantendo a lógica anterior)
+        if (isset($validatedData['social_links'])) {
+            $links = is_string($validatedData['social_links']) ? explode(',', $validatedData['social_links']) : $validatedData['social_links'];
+            $profileData['social_links'] = array_filter(array_map('trim', $links));
         } else {
-            $profileData['social_links'] = null; // Garante que seja null se não enviado ou vazio
+            $profileData['social_links'] = null;
         }
 
 
-        // 3. Tratar upload da foto
+        // 3. Tratar upload da foto (mantendo a lógica anterior)
         if ($request->hasFile('photo')) {
-            // Deletar foto antiga se existir
             if ($user->profile && $user->profile->photo_path) {
                 Storage::disk('public')->delete($user->profile->photo_path);
             }
@@ -86,16 +93,25 @@ class PersonalInfoController extends Controller
             $profileData['photo_path'] = $photoPath;
         }
 
-        // 4. Atualizar ou criar o perfil do usuário
-        // Usar updateOrCreate para lidar tanto com a criação (se o perfil não existir)
-        // quanto com a atualização (se já existir).
+        // 4. Atualizar ou criar o perfil do usuário (agora inclui os novos campos)
         $user->profile()->updateOrCreate(
-            ['user_id' => $user->id], // Condições para encontrar o registro
-            $profileData  // Valores para atualizar ou criar
+            ['user_id' => $user->id], // Condição para encontrar
+            $profileData              // Valores para atualizar ou criar
         );
 
         return redirect()->route('personal_info.edit')->with('success', 'Dados pessoais atualizados com sucesso!');
-        // Ou redirecionar para 'home' se preferir:
-        // return redirect()->route('home')->with('success', 'Dados pessoais atualizados com sucesso!');
+    }
+
+    public function show()// Ou pode chamar de index() se preferir
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        // Garante que o perfil exista ou cria um novo para o usuário
+        $profile = $user->profile()->firstOrCreate(
+            ['user_id' => $user->id]
+        );
+
+        return view('personal_info.showInfoPessoal', compact('user', 'profile'));
     }
 }

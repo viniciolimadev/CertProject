@@ -52,6 +52,7 @@ Route::middleware(['auth'])->group(function () {
     // Informações Pessoais
     Route::get('/personal-info/edit', [PersonalInfoController::class, 'edit'])->name('personal_info.edit');
     Route::put('/personal-info/update', [PersonalInfoController::class, 'update'])->name('personal_info.update');
+    Route::get('/personal-info', [PersonalInfoController::class, 'show'])->name('personal_info.show');
 
     // Currículo
     Route::get('/curriculo', [CurriculoController::class, 'index'])->name('curriculo.index');
