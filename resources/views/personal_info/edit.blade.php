@@ -42,7 +42,7 @@
                                 Perfil:</label>
                             <input type="file" id="photo" name="photo"
                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500
-                                          @error('photo') border border-red-500 @else border border-gray-300 @enderror"> {/* Correção Tailwind */}
+                                          @error('photo') border border-red-500 @else border border-gray-300 @enderror">
                             @if ($profile->photo_path)
                                 <div class="mt-3">
                                     <img src="{{ asset('storage/' . $profile->photo_path) }}" alt="Foto atual"

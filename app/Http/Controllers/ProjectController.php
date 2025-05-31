@@ -55,7 +55,7 @@ class ProjectController extends Controller
             'description' => $validatedData['description'] ?? null,
             'url_project' => $validatedData['url_project'] ?? null,
             'public' => $validatedData['public'],
-            'pinned' => false,
+            // 'pinned' => false,
         ]);
 
         return redirect()->route('projects.index')->with('success', 'Projeto salvo com sucesso!');
